@@ -60,13 +60,16 @@ def main():
         predictor.save_model(os.path.join(model_dir, 'model.joblib'))
         
         # Add metrics to the table
-        metrics_df = metrics_df.append({
+        new_metrics_row = pd.DataFrame([{
             'Model': model_name,
             'Accuracy': metrics['accuracy'],
             'Precision': metrics['precision'],
             'Recall': metrics['recall'],
             'F1': metrics['f1']
-        }, ignore_index=True)
+        }])
+
+        metrics_df = pd.concat([metrics_df, new_metrics_row], ignore_index=True)
+
         
         # Plot ROC curve for model
         fpr, tpr, _ = roc_curve(y_test, y_prob)

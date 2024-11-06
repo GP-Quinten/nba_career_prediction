@@ -57,3 +57,4 @@ PARAM_GRIDS = {
 # Feature engineering configurations
 MINUTES_BINS = [0, 10, 20, 30, float('inf')]
 GAMES_BINS = [0, 28, 56, float('inf')]
+OUTCOME = 'TARGET_5Yrs'

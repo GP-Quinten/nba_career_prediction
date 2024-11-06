@@ -7,7 +7,7 @@ import shap
 import joblib
 import logging
 import os
-from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS
+from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS, OUTCOME
 
 class NBACareerPredictor:
     def __init__(self):
@@ -27,7 +27,7 @@ class NBACareerPredictor:
         
         # Total features
         for col in df.columns:
-            if col not in ['Name', 'TARGET_5Yrs', 'FG%', '3P%', 'FT%']:
+            if col not in ['Name', OUTCOME, 'FG%', '3P%', 'FT%']:
                 enhanced_df[f'{col}_TOT'] = df['GP'] * df[col]
         
         # Efficiency rates
@@ -62,18 +62,18 @@ class NBACareerPredictor:
         df = df.fillna(0)
         
         # Drop duplicates
-        df = df.groupby(['Name'] + [col for col in df.columns if col != 'TARGET_5Yrs'])\
-               .agg({'TARGET_5Yrs': 'max'})\
+        df = df.groupby([col for col in df.columns if col != OUTCOME])\
+               .agg({OUTCOME: 'max'})\
                .reset_index()
         
         logging.info(f"Dataset contains {df['Name'].nunique()} unique players")
         
         # Store feature names
-        self.features_list = [col for col in df.columns if col not in ['Name', 'TARGET_5Yrs']]
+        self.features_list = [col for col in df.columns if col not in ['Name', OUTCOME]]
         
         # Split features and target
         X = df[self.features_list]
-        y = df['TARGET_5Yrs']
+        y = df[OUTCOME]
         
         # Normalize features
         X = self.scaler.fit_transform(X)
