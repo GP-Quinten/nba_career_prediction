@@ -8,4 +8,5 @@ seaborn
 shap
 joblib
 flask
+xgboost
 
