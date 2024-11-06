@@ -19,7 +19,15 @@ def main():
     os.makedirs(experiment_dir, exist_ok=True)
     
     # Initialize results tracking
-    metrics_df = pd.DataFrame(columns=['Model', 'Accuracy', 'Precision', 'Recall', 'F1'])
+    # Initialize metrics_df with specific column names and data types
+    metrics_df = pd.DataFrame({
+        'Model': pd.Series(dtype='str'),
+        'Accuracy': pd.Series(dtype='float'),
+        'Precision': pd.Series(dtype='float'),
+        'Recall': pd.Series(dtype='float'),
+        'F1': pd.Series(dtype='float')
+    })
+
     fig = go.Figure()
     
     # Load data
@@ -47,7 +55,10 @@ def main():
     
     # Train and evaluate each model
     for model_name in args.models:
-        logging.info(f"\nProcessing {model_name}...")
+        logging.info("-" * 50)
+        logging.info(" " * 20)
+        logging.info(f"Processing {model_name}...")
+        logging.info("-" * 20)
         
         # Train and evaluate model
         metrics, conf_matrix, y_prob = predictor.train_and_test_model(
@@ -78,6 +89,8 @@ def main():
         
         # Explain predictions if XAI is enabled
         if config.XAI:
+            logging.info("------")
+            logging.info("Explaining predictions with SHAP...")
             shap_values = predictor.explain_predictions(X_test)
             shap.summary_plot(shap_values, X_test, feature_names=predictor.features_list)
     

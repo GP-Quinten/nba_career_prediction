@@ -147,9 +147,15 @@ class NBACareerPredictor:
     def explain_predictions(self, X):
         """Generate SHAP values for model interpretation"""
         logging.info("Generating SHAP values...")
-        
-        explainer = shap.TreeExplainer(self.model)
-        shap_values = explainer.shap_values(X)
+        # if the model type is not SVM, we can use the TreeExplainer
+        from sklearn.svm import SVC
+        if not isinstance(self.model, SVC):
+            explainer = shap.TreeExplainer(self.model)
+            shap_values = explainer.shap_values(X)
+        else:
+            # if the model type is SVM, we need to use the KernelExplainer
+            explainer = shap.KernelExplainer(self.model.predict, X)
+            shap_values = explainer.shap_values(X)
         
         return shap_values
     

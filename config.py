@@ -19,7 +19,7 @@ ROC_PLOT_PATH = os.path.join(RESULTS_DIR, 'roc_curves.html')
 RANDOM_SEED = 42
 GOAL_METRIC = 'auprc'  # alternatively 'recall'
 N_SPLITS = 5
-XAI = True  # Whether to compute SHAP values
+XAI = False  # Whether to compute SHAP values
 
 # Model parameter grids
 PARAM_GRIDS = {
@@ -38,12 +38,14 @@ PARAM_GRIDS = {
     'Logistic Regression': {
         'C': [0.001, 0.01, 0.1, 1, 10],
         'class_weight': ['balanced', None],
-        'solver': ['lbfgs', 'liblinear']
+        'solver': ['lbfgs', 'liblinear'],
+        'max_iter': [10000]
     },
     'SVM': {
-        'C': [0.1, 1, 10],
-        'kernel': ['rbf', 'linear'],
-        'class_weight': ['balanced', None]
+        'C': [0.01, 0.1, 1, 10, 100],
+        'kernel': ['rbf', 'linear', 'poly', 'sigmoid'],
+        'class_weight': ['balanced', None],
+        'probability': [True]
     },
     'XGBoost': {
         'n_estimators': [100, 200],
