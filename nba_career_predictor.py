@@ -50,6 +50,10 @@ class NBACareerPredictor:
         
         # One-hot encode categorical features
         enhanced_df = pd.get_dummies(enhanced_df, columns=['MIN_CAT', 'GP_CAT'])
+
+        # add Two random variables: RANDOM_BINARY and RANDOM_NUMERICAL (random float value between 0 and 1)
+        enhanced_df['RANDOM_BINARY'] = np.random.randint(0, 2, size=len(enhanced_df))
+        enhanced_df['RANDOM_NUMERICAL'] = np.random.randint(0, 1000, size=len(enhanced_df))
         
         logging.info(f"Added {len(enhanced_df.columns) - len(df.columns)} new features")
         return enhanced_df

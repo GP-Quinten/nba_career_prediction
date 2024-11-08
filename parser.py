@@ -26,6 +26,14 @@ def setup_parser():
         default='experiment',
         help='Name of the experiment for saving results'
     )
+
+    parser.add_argument(
+        '--add-random-variable',
+        choices=[True, False],
+        type=bool,
+        default=False,
+        help='You can add a random variable to the dataset to test the coherence of the model'
+    )
     
     args = parser.parse_args()
     
