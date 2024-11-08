@@ -7,7 +7,7 @@ import shap
 import joblib
 import logging
 import os
-from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS, OUTCOME
+from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS, OUTCOME, GOAL_METRIC
 
 class NBACareerPredictor:
     def __init__(self):
@@ -114,6 +114,12 @@ class NBACareerPredictor:
         
         return grid_search.best_estimator_
     
+    def calculate_youden_index(self, fpr, tpr, thresholds):
+        """Calculate Youden Index and find optimal threshold"""
+        youden_index = tpr - fpr
+        max_index = np.argmax(youden_index)
+        return youden_index[max_index], thresholds[max_index], fpr[max_index], tpr[max_index]
+    
     def train_and_test_model(self, X_train, y_train, X_test, y_test, model_type):
         """Train and evaluate model"""
         logging.info("Training final model...")
@@ -136,13 +142,21 @@ class NBACareerPredictor:
             'f1': f1_score(y_test, y_pred)
         }
         
-        conf_matrix = confusion_matrix(y_test, y_pred)
+        # Calculate ROC curve and AUC
+        fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+        auc_score = auc(fpr, tpr)
         
-        logging.info("Model performance metrics:")
+        # Calculate Youden Index
+        youden_index, optimal_threshold, optimal_fpr, optimal_tpr = self.calculate_youden_index(fpr, tpr, thresholds)
+        
+        logging.info(f"Model performance metrics (AUC={auc_score:.3f}):")
         for metric, value in metrics.items():
             logging.info(f"{metric}: {value:.3f}")
+        logging.info(f"Youden Index: {youden_index:.3f} at threshold {optimal_threshold:.3f}")
+
+        final_score = metrics[GOAL_METRIC]
         
-        return metrics, conf_matrix, y_prob
+        return metrics, final_score, fpr, tpr, youden_index, optimal_threshold, optimal_fpr, optimal_tpr
     
     def explain_predictions(self, X):
         """Generate SHAP values for model interpretation"""

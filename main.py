@@ -60,8 +60,8 @@ def main():
         logging.info(f"Processing {model_name}...")
         logging.info("-" * 20)
         
-        # Train and evaluate model
-        metrics, conf_matrix, y_prob = predictor.train_and_test_model(
+        # Train and evaluate model, now returns more metrics
+        metrics, final_score, fpr, tpr, youden_index, optimal_threshold, optimal_fpr, optimal_tpr = predictor.train_and_test_model(
             X_train, y_train, X_test, y_test, model_name
         )
         
@@ -81,11 +81,19 @@ def main():
 
         metrics_df = pd.concat([metrics_df, new_metrics_row], ignore_index=True)
 
-        
-        # Plot ROC curve for model
-        fpr, tpr, _ = roc_curve(y_test, y_prob)
-        auc_score = auc(fpr, tpr)
-        fig.add_trace(go.Scatter(x=fpr, y=tpr, mode='lines', name=f'{model_name} (AUC={auc_score:.2f})'))
+        # Plot ROC curve for model and Youden Index point
+        fig.add_trace(go.Scatter(
+            x=fpr, y=tpr, mode='lines', 
+            name=f'{model_name} ({config.GOAL_METRIC}={final_score:.2f})',
+            hovertemplate="False Positive Rate: %{x:.2f}<br>True Positive Rate: %{y:.2f}<extra></extra>"
+        ))
+        fig.add_trace(go.Scatter(
+            x=[optimal_fpr], y=[optimal_tpr],
+            mode='markers', marker=dict(color='red', size=8),
+            name=f'{model_name} Youden Index (Threshold={optimal_threshold:.2f})',
+            hovertemplate="Optimal Threshold: %{text:.2f}<br>FPR: %{x:.2f}<br>TPR: %{y:.2f}<extra></extra>",
+            text=[optimal_threshold]  # text argument for hovertemplate
+        ))
         
         # Explain predictions if XAI is enabled
         if config.XAI:
