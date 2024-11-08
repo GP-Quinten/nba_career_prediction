@@ -36,6 +36,7 @@ def main():
     
     # Initialize predictor
     predictor = NBACareerPredictor()
+    predictors_dict = {}
     
     # Add features
     logging.info("Adding features...")
@@ -59,16 +60,17 @@ def main():
         logging.info(" " * 20)
         logging.info(f"Processing {model_name}...")
         logging.info("-" * 20)
+        predictors_dict[model_name] = NBACareerPredictor(model_type=model_name)
         
         # Train and evaluate model, now returns more metrics
-        metrics, final_score, fpr, tpr, youden_index, optimal_threshold, optimal_fpr, optimal_tpr = predictor.train_and_test_model(
-            X_train, y_train, X_test, y_test, model_name
+        metrics, final_score, fpr, tpr, youden_index, optimal_threshold, optimal_fpr, optimal_tpr = predictors_dict[model_name].train_and_test_model(
+            X_train, y_train, X_test, y_test
         )
         
         # Save model and results
         model_dir = os.path.join(experiment_dir, model_name.replace(' ', '_'))
         os.makedirs(model_dir, exist_ok=True)
-        predictor.save_model(os.path.join(model_dir, 'model.joblib'))
+        predictors_dict[model_name].save_model(os.path.join(model_dir, 'model.joblib'))
         
         # Add metrics to the table
         new_metrics_row = pd.DataFrame([{
@@ -94,22 +96,24 @@ def main():
             hovertemplate="Optimal Threshold: %{text:.2f}<br>FPR: %{x:.2f}<br>TPR: %{y:.2f}<extra></extra>",
             text=[optimal_threshold]  # text argument for hovertemplate
         ))
-        
-        # Explain predictions if XAI is enabled
-        if config.XAI:
-            logging.info("------")
-            logging.info("Explaining predictions with SHAP...")
-            shap_values = predictor.explain_predictions(X_test)
-            shap.summary_plot(shap_values, X_test, feature_names=predictor.features_list)
     
     # Save metrics and ROC plot
     metrics_df.to_csv(os.path.join(experiment_dir, 'metrics.csv'), index=False)
-    fig.update_layout(title="ROC Curves", xaxis_title="False Positive Rate", yaxis_title="True Positive Rate")
+    fig.update_layout(title=f"ROC Curves of experiment {args.experiment_name}", xaxis_title="False Positive Rate", yaxis_title="True Positive Rate")
     fig.write_html(os.path.join(experiment_dir, 'roc_curves.html'))
     
     # Display metrics table and ROC curves plot
     logging.info("Final metrics table:\n" + str(metrics_df))
     fig.show()
+
+    # Explain predictions if XAI is enabled
+    if config.XAI:
+        for model_name in args.models:
+            logging.info("------")
+            logging.info(f"Explaining predictions of model {model_name} with SHAP...")
+            shap_values = predictors_dict[model_name].explain_predictions(X_test)
+            shap.summary_plot(shap_values, X_test, feature_names=predictor.features_list)
+            # TODO : save shap plot and add title to it
 
 if __name__ == '__main__':
     main()

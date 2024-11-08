@@ -10,8 +10,9 @@ import os
 from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS, OUTCOME, GOAL_METRIC
 
 class NBACareerPredictor:
-    def __init__(self):
+    def __init__(self, model_type="Random Forest"):
         self.model = None
+        self.model_type = model_type
         self.features_list = None
         self.scaler = MinMaxScaler()
         self.hyperparameters = {}
@@ -27,14 +28,16 @@ class NBACareerPredictor:
         
         # Total features
         for col in df.columns:
-            if col not in ['Name', OUTCOME, 'FG%', '3P%', 'FT%']:
+            if col not in ['Name', OUTCOME, 'FG%', '3P%', 'FT%', 'GP']:
                 enhanced_df[f'{col}_TOT'] = df['GP'] * df[col]
         
         # Efficiency rates
-        tot_cols = [col for col in enhanced_df.columns if col.endswith('_TOT')]
+        tot_cols = [col for col in enhanced_df.columns if ((col.endswith('_TOT')) and (col != 'MIN_TOT'))]
         for col in tot_cols:
             base_name = col.replace('_TOT', '')
             enhanced_df[f'{base_name}_RATE'] = enhanced_df[col] / np.maximum(enhanced_df['MIN_TOT'], 1)
+        # drop all tot_cols
+        enhanced_df = enhanced_df.drop(tot_cols, axis=1)
         
         # Categorical features for minutes and games
         enhanced_df['MIN_CAT'] = pd.cut(
@@ -89,12 +92,13 @@ class NBACareerPredictor:
         
         return X_train, X_test, y_train, y_test
     
-    def hyperparameter_tuning_model(self, X_train, y_train, model_type):
+    def hyperparameter_tuning_model(self, X_train, y_train):
         """Tuning hyperparameters for the model"""
+        model_type = self.model_type
         logging.info(f"Fine-tuning {model_type} model...")
         
         # Get base model and parameter grid
-        base_model = self._get_model_instance(model_type)
+        base_model = self._get_model_instance()
         param_grid = PARAM_GRIDS[model_type]
         
         # Setup cross-validation
@@ -124,12 +128,12 @@ class NBACareerPredictor:
         max_index = np.argmax(youden_index)
         return youden_index[max_index], thresholds[max_index], fpr[max_index], tpr[max_index]
     
-    def train_and_test_model(self, X_train, y_train, X_test, y_test, model_type):
+    def train_and_test_model(self, X_train, y_train, X_test, y_test):
         """Train and evaluate model"""
         logging.info("Training final model...")
         
         # Get tuned model
-        self.model = self.hyperparameter_tuning_model(X_train, y_train, model_type)
+        self.model = self.hyperparameter_tuning_model(X_train, y_train)
         
         # Train model
         self.model.fit(X_train, y_train)
@@ -166,6 +170,7 @@ class NBACareerPredictor:
         """Generate SHAP values for model interpretation"""
         logging.info("Generating SHAP values...")
         # if the model type is not SVM, we can use the TreeExplainer
+        # TODO: solve issue when Logistic regression or Random Forest
         from sklearn.svm import SVC
         if not isinstance(self.model, SVC):
             explainer = shap.TreeExplainer(self.model)
@@ -201,8 +206,9 @@ class NBACareerPredictor:
         predictor.threshold = model_data['threshold']
         return predictor
     
-    def _get_model_instance(self, model_type):
+    def _get_model_instance(self):
         """Helper method to get model instance based on type"""
+        model_type = self.model_type
         if model_type == 'Random Forest':
             from sklearn.ensemble import RandomForestClassifier
             return RandomForestClassifier(random_state=42)
