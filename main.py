@@ -39,7 +39,7 @@ def main():
     predictors_dict = {}
     
     # Add features
-    logging.info("Adding features...")
+    logging.info("Adding smart features...")
     enhanced_df = predictor.add_features(df)
     
     # Save enhanced dataset
@@ -85,7 +85,7 @@ def main():
 
         # Plot ROC curve for model and Youden Index point
         fig.add_trace(go.Scatter(
-            x=fpr, y=tpr, mode='lines', 
+            x=fpr, y=tpr, mode='lines', line=dict(color=config.MODELS_COLORS[model_name]),
             name=f'{model_name} ({config.GOAL_METRIC}={final_score:.2f})',
             hovertemplate="False Positive Rate: %{x:.2f}<br>True Positive Rate: %{y:.2f}<extra></extra>"
         ))

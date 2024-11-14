@@ -19,7 +19,7 @@ ROC_PLOT_PATH = os.path.join(RESULTS_DIR, 'roc_curves.html')
 RANDOM_SEED = 42
 GOAL_METRIC = 'recall'  # alternatively 'auprc'
 N_SPLITS = 5
-XAI = True  # Whether to compute SHAP values
+XAI = False  # Whether to compute SHAP values
 
 # Model parameter grids
 PARAM_GRIDS = {
@@ -60,3 +60,12 @@ PARAM_GRIDS = {
 MINUTES_BINS = [0, 10, 20, 30, float('inf')]
 GAMES_BINS = [0, 28, 56, float('inf')]
 OUTCOME = 'TARGET_5Yrs'
+
+# parameters for plotting
+MODELS_COLORS = {
+    "Random Forest": "blue",
+    "Gradient Boosting": "green",
+    "Logistic Regression": "red",
+    "SVM": "orange",
+    "XGBoost": "purple"
+}
