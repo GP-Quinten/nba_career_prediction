@@ -60,10 +60,10 @@ def main():
         logging.info(" " * 20)
         logging.info(f"Processing {model_name}...")
         logging.info("-" * 20)
-        predictors_dict[model_name] = NBACareerPredictor(model_type=model_name)
+        predictors_dict[model_name] = NBACareerPredictor(model_type=model_name, seed=args.seed)
         
         # Train and evaluate model, now returns more metrics
-        metrics, final_score, fpr, tpr, youden_index, optimal_threshold, optimal_fpr, optimal_tpr = predictors_dict[model_name].train_and_test_model(
+        metrics, final_score, fpr, tpr, thresholds, youden_index, optimal_threshold, optimal_fpr, optimal_tpr = predictors_dict[model_name].train_and_test_model(
             X_train, y_train, X_test, y_test
         )
         
@@ -86,16 +86,17 @@ def main():
         # Plot ROC curve for model and Youden Index point
         fig.add_trace(go.Scatter(
             x=fpr, y=tpr, mode='lines', line=dict(color=config.MODELS_COLORS[model_name]),
-            name=f'{model_name} ({config.GOAL_METRIC}={final_score:.2f})',
-            hovertemplate="False Positive Rate: %{x:.2f}<br>True Positive Rate: %{y:.2f}<extra></extra>"
+            name=model_name,
+            hovertemplate=("FPR: %{x:.2f}<br>"+"TPR: %{y:.2f}<br>"+"Threshold: %{customdata:.2f}<extra></extra>"),
+            customdata=thresholds  # This adds the thresholds to the hover data
         ))
-        fig.add_trace(go.Scatter(
-            x=[optimal_fpr], y=[optimal_tpr],
-            mode='markers', marker=dict(color='red', size=8),
-            name=f'{model_name} Youden Index (Threshold={optimal_threshold:.2f})',
-            hovertemplate="Optimal Threshold: %{text:.2f}<br>FPR: %{x:.2f}<br>TPR: %{y:.2f}<extra></extra>",
-            text=[optimal_threshold]  # text argument for hovertemplate
-        ))
+        # fig.add_trace(go.Scatter(
+        #     x=[optimal_fpr], y=[optimal_tpr],
+        #     mode='markers', marker=dict(color='red', size=8),
+        #     name=f'{model_name} Youden Index (Threshold={optimal_threshold:.2f})',
+        #     hovertemplate="Optimal Threshold: %{text:.2f}<br>FPR: %{x:.2f}<br>TPR: %{y:.2f}<extra></extra>",
+        #     text=[optimal_threshold]  # text argument for hovertemplate
+        # ))
     
     # Save metrics and ROC plot
     metrics_df.to_csv(os.path.join(experiment_dir, 'metrics.csv'), index=False)

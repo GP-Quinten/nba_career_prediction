@@ -1,4 +1,6 @@
 ##########################
+# Hide results
+results/**
 # KEDRO PROJECT
 
 # ignore all local configuration

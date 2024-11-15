@@ -34,6 +34,14 @@ def setup_parser():
         default=False,
         help='You can add a random variable to the dataset to test the coherence of the model'
     )
+
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default=42,
+        help='Number of your seed',
+        required=False,
+    )
     
     args = parser.parse_args()
     

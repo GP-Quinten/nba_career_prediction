@@ -7,10 +7,10 @@ import shap
 import joblib
 import logging
 import os
-from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS, OUTCOME, GOAL_METRIC
+from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS, OUTCOME, GOAL_METRIC, RANDOM_SEED, N_SPLITS
 
 class NBACareerPredictor:
-    def __init__(self, model_type="Random Forest"):
+    def __init__(self, model_type="Random Forest", seed=42):
         self.model = None
         self.model_type = model_type
         self.features_list = None
@@ -18,6 +18,7 @@ class NBACareerPredictor:
         self.hyperparameters = {}
         self.feature_names = None
         self.threshold = 0.5
+        self.seed = seed
         
     def add_features(self, df):
         """Add engineered features to the dataset"""
@@ -53,8 +54,9 @@ class NBACareerPredictor:
         
         # One-hot encode categorical features
         enhanced_df = pd.get_dummies(enhanced_df, columns=['MIN_CAT', 'GP_CAT'])
-
+        
         # add Two random variables: RANDOM_BINARY and RANDOM_NUMERICAL (random float value between 0 and 1)
+        np.random.seed(42)
         enhanced_df['RANDOM_BINARY'] = np.random.randint(0, 2, size=len(enhanced_df))
         enhanced_df['RANDOM_NUMERICAL'] = np.random.randint(0, 1000, size=len(enhanced_df))
         
@@ -87,7 +89,7 @@ class NBACareerPredictor:
         
         # Split train/test
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
+            X, y, test_size=0.2, random_state=self.seed, stratify=y
         )
         
         return X_train, X_test, y_train, y_test
@@ -102,7 +104,7 @@ class NBACareerPredictor:
         param_grid = PARAM_GRIDS[model_type]
         
         # Setup cross-validation
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        cv = StratifiedKFold(n_splits=N_SPLITS, shuffle=True, random_state=self.seed)
         
         # Perform grid search
         grid_search = GridSearchCV(
@@ -153,6 +155,8 @@ class NBACareerPredictor:
         # Calculate ROC curve and AUC
         fpr, tpr, thresholds = roc_curve(y_test, y_prob)
         auc_score = auc(fpr, tpr)
+        # add auc_score to metrics
+        metrics['auprc'] = auc_score
         
         # Calculate Youden Index
         youden_index, optimal_threshold, optimal_fpr, optimal_tpr = self.calculate_youden_index(fpr, tpr, thresholds)
@@ -160,11 +164,11 @@ class NBACareerPredictor:
         logging.info(f"Model performance metrics (AUC={auc_score:.3f}):")
         for metric, value in metrics.items():
             logging.info(f"{metric}: {value:.3f}")
-        logging.info(f"Youden Index: {youden_index:.3f} at threshold {optimal_threshold:.3f}")
+        # logging.info(f"Youden Index: {youden_index:.3f} at threshold {optimal_threshold:.3f}")
 
         final_score = metrics[GOAL_METRIC]
         
-        return metrics, final_score, fpr, tpr, youden_index, optimal_threshold, optimal_fpr, optimal_tpr
+        return metrics, final_score, fpr, tpr, thresholds, youden_index, optimal_threshold, optimal_fpr, optimal_tpr
     
     def explain_predictions(self, X):
         """Generate SHAP values for model interpretation"""
@@ -211,18 +215,18 @@ class NBACareerPredictor:
         model_type = self.model_type
         if model_type == 'Random Forest':
             from sklearn.ensemble import RandomForestClassifier
-            return RandomForestClassifier(random_state=42)
+            return RandomForestClassifier(random_state=self.seed)
         elif model_type == 'Gradient Boosting':
             from sklearn.ensemble import GradientBoostingClassifier
-            return GradientBoostingClassifier(random_state=42)
+            return GradientBoostingClassifier(random_state=self.seed)
         elif model_type == 'Logistic Regression':
             from sklearn.linear_model import LogisticRegression
-            return LogisticRegression(random_state=42)
+            return LogisticRegression(random_state=self.seed)
         elif model_type == 'SVM':
             from sklearn.svm import SVC
-            return SVC(probability=True, random_state=42)
+            return SVC(probability=True, random_state=self.seed)
         elif model_type == 'XGBoost':
             import xgboost as xgb
-            return xgb.XGBClassifier(random_state=42)
+            return xgb.XGBClassifier(random_state=self.seed)
         else:
             raise ValueError(f"Unknown model type: {model_type}")

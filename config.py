@@ -16,9 +16,9 @@ METRICS_PATH = os.path.join(RESULTS_DIR, 'metrics.csv')
 ROC_PLOT_PATH = os.path.join(RESULTS_DIR, 'roc_curves.html')
 
 # Model configurations
-RANDOM_SEED = 42
-GOAL_METRIC = 'recall'  # alternatively 'auprc'
-N_SPLITS = 5
+RANDOM_SEED = 10
+GOAL_METRIC = 'recall'  # alternatively 'recall'
+N_SPLITS = 10
 XAI = False  # Whether to compute SHAP values
 
 # Model parameter grids
