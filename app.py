@@ -1,10 +1,17 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template_string
 import pandas as pd
 import os
 import logging
 from nba_career_predictor import NBACareerPredictor
 import config
 from werkzeug.utils import secure_filename
+import shap
+import base64
+from io import BytesIO
+# Add these imports at the top
+import matplotlib
+matplotlib.use('Agg')  # Set this BEFORE importing pyplot
+import matplotlib.pyplot as plt
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,6 +46,44 @@ def read_excel_input(file):
         logger.error(f"Error reading Excel file: {str(e)}")
         raise
 
+def get_shap_explanation(model, enhanced_df_scaled, feature_names):
+    """Generate SHAP local explanation plot and return as base64 string"""
+    plt.clf()  # Clear current figure
+    
+    # Get SHAP values
+    from sklearn.linear_model import LogisticRegression
+    if isinstance(model, LogisticRegression):
+        explainer = shap.LinearExplainer(model, enhanced_df_scaled)
+    else:
+        explainer = shap.TreeExplainer(model)
+    
+    shap_values = explainer.shap_values(enhanced_df_scaled)
+    
+    # For binary classification, we might need to select the positive class
+    if isinstance(shap_values, list):
+        shap_values = shap_values[1]
+    
+    # Create force plot
+    plt.figure(figsize=(15, 5))
+    shap.force_plot(
+        explainer.expected_value if isinstance(explainer, shap.TreeExplainer) 
+        else explainer.expected_value[0],
+        shap_values[0],
+        enhanced_df_scaled.iloc[0],
+        feature_names=feature_names,
+        matplotlib=True,
+        show=False
+    )
+    plt.tight_layout()
+    
+    # Convert plot to base64 string
+    buf = BytesIO()
+    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    plt.close()
+    buf.seek(0)
+    plot_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+    return plot_base64
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
@@ -71,18 +116,30 @@ def predict():
         input_df = pd.DataFrame([player_stats])
         enhanced_df = predictor.add_features(input_df)
         
-        # Scale the features using the fitted scaler
+        # Scale the features
         enhanced_df_scaled = pd.DataFrame(
             predictor.scaler.transform(enhanced_df),
             columns=enhanced_df.columns
         )
         
+        # Get prediction
         probability = predictor.predict_proba(enhanced_df_scaled)[0]
         prediction = int(probability >= predictor.threshold)
+        
+        # Generate SHAP explanation
+        shap_plot = get_shap_explanation(predictor.model, enhanced_df_scaled, enhanced_df.columns)
+        
+        # Store results for visualization
+        app.shap_results = {
+            'prediction': prediction,
+            'probability': round(float(probability),2),
+            'shap_plot': shap_plot
+        }
         
         response = {
             'prediction': prediction,
             'probabilite': round(float(probability),2),
+            'message': 'View explanation at http://127.0.0.1:5000/explain'
         }
         
         return jsonify(response)
@@ -90,6 +147,23 @@ def predict():
     except Exception as e:
         logger.error(f"Erreur lors de la prédiction: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/explain', methods=['GET'])
+def explain():
+    """Display the SHAP explanation for the last prediction"""
+    try:
+        if not hasattr(app, 'shap_results'):
+            return "No prediction available to explain", 404
+            
+        return render_template_string(
+            config.HTML_TEMPLATE,
+            prediction=app.shap_results['prediction'],
+            probability=app.shap_results['probability'],
+            shap_plot=app.shap_results['shap_plot']
+        )
+    except Exception as e:
+        logger.error(f"Error generating explanation: {str(e)}")
+        return str(e), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

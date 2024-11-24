@@ -70,3 +70,45 @@ MODELS_COLORS = {
     "SVM": "orange",
     "XGBoost": "purple"
 }
+
+# parameters for app SHAP local explanation HTML template
+HTML_SHAP_LOCAL_EXPL_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SHAP Explanation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .probability {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Prediction Results</h2>
+    <div class="result">
+        <p>Prediction: <span class="probability">{{ 'Carrière > 5 ans' if prediction == 1 else 'Carrière <= 5 ans' }}</span></p>
+        <p>Probabilité: <span class="probability">{{ "%.2f%%" | format(probability * 100) }}</span></p>
+    </div>
+    <h3>SHAP Explanation</h3>
+    <img src="data:image/png;base64,{{ shap_plot }}" />
+</body>
+</html>
+"""
