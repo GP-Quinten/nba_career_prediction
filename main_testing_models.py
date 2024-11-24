@@ -1,7 +1,5 @@
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import logging
 import os
 from sklearn.model_selection import train_test_split
@@ -9,6 +7,8 @@ from nba_career_predictor import NBACareerPredictor
 from parser import setup_parser
 import config
 import shap
+import json
+import matplotlib.pyplot as plt
 
 def main():
     # Setup logging
@@ -94,11 +94,27 @@ def main():
             predictor.test_model(X_test_scaled, y_test)
         )
         
-        # Save model and results
+        # Save model, hyperparameters and results
         model_dir = os.path.join(experiment_dir, model_name.replace(' ', '_'))
         os.makedirs(model_dir, exist_ok=True)
         predictor.save_model(os.path.join(model_dir, 'model.joblib'))
+        # Save model metadata
+        metadata = {
+            'model_type': args.model_type,
+            'features': predictor.features_list,
+            'hyperparameters': predictor.hyperparameters,
+            'metrics': metrics,
+            'training_date': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'number_of_features': len(predictor.features_list),
+            'training_samples': len(X),
+            'positive_class_ratio': float(y.mean()),
+            'random_seed': args.seed
+        }
         
+        # Save metadata as JSON
+        with open(os.path.join(model_dir, 'model_metadata.json'), 'w') as f:
+            json.dump(metadata, f, indent=4)
+
         # Add metrics to the results DataFrame
         new_metrics_row = pd.DataFrame([{
             'Model': model_name,
@@ -146,7 +162,6 @@ def main():
             shap_values = predictor.explain_predictions(X_test_scaled)
             
             # Create SHAP summary plot
-            import matplotlib.pyplot as plt
             plt.figure()
             shap.summary_plot(
                 shap_values, 

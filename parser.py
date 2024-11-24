@@ -43,6 +43,20 @@ def setup_parser():
         required=False,
     )
     
+    # Add arguments specific to final model training
+    parser.add_argument(
+        '--final-model',
+        action='store_true',
+        help='Whether this is for training the final production model'
+    )
+    
+    parser.add_argument(
+        '--output-dir',
+        type=str,
+        default='production_model',
+        help='Directory to save the final model (only used with --final-model)'
+    )
+    
     args = parser.parse_args()
     
     # Validate models
