@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split, StratifiedKFold, GridSearchCV
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_curve, auc
 import shap
 import joblib
@@ -55,7 +55,7 @@ class NBACareerPredictor:
         # One-hot encode categorical features
         enhanced_df = pd.get_dummies(enhanced_df, columns=['MIN_CAT', 'GP_CAT'])
         
-        # add Two random variables: RANDOM_BINARY and RANDOM_NUMERICAL (random float value between 0 and 1)
+        # add Two random variables: RANDOM_BINARY and RANDOM_NUMERICAL
         np.random.seed(42)
         enhanced_df['RANDOM_BINARY'] = np.random.randint(0, 2, size=len(enhanced_df))
         enhanced_df['RANDOM_NUMERICAL'] = np.random.randint(0, 1000, size=len(enhanced_df))
@@ -80,19 +80,7 @@ class NBACareerPredictor:
         # Store feature names
         self.features_list = [col for col in df.columns if col not in ['Name', OUTCOME]]
         
-        # Split features and target
-        X = df[self.features_list]
-        y = df[OUTCOME]
-        
-        # Normalize features
-        X = self.scaler.fit_transform(X)
-        
-        # Split train/test
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=self.seed, stratify=y
-        )
-        
-        return X_train, X_test, y_train, y_test
+        return df
     
     def hyperparameter_tuning_model(self, X_train, y_train):
         """Tuning hyperparameters for the model"""
@@ -124,21 +112,35 @@ class NBACareerPredictor:
         
         return grid_search.best_estimator_
     
-    def calculate_youden_index(self, fpr, tpr, thresholds):
-        """Calculate Youden Index and find optimal threshold"""
-        youden_index = tpr - fpr
-        max_index = np.argmax(youden_index)
-        return youden_index[max_index], thresholds[max_index], fpr[max_index], tpr[max_index]
-    
-    def train_and_test_model(self, X_train, y_train, X_test, y_test):
-        """Train and evaluate model"""
-        logging.info("Training final model...")
+    def train_model(self, X_train, y_train):
+        """Train the model"""
+        logging.info("Training model...")
         
         # Get tuned model
         self.model = self.hyperparameter_tuning_model(X_train, y_train)
         
         # Train model
         self.model.fit(X_train, y_train)
+        
+        # Make training predictions
+        y_pred = self.model.predict(X_train)
+        y_prob = self.model.predict_proba(X_train)[:, 1]
+        
+        # Calculate metrics
+        metrics = {
+            'accuracy': accuracy_score(y_train, y_pred),
+            'precision': precision_score(y_train, y_pred),
+            'recall': recall_score(y_train, y_pred),
+            'f1': f1_score(y_train, y_pred)
+        }
+        
+        final_score = metrics[GOAL_METRIC]
+        
+        return metrics, final_score
+    
+    def test_model(self, X_test, y_test):
+        """Test the model and calculate metrics"""
+        logging.info("Testing model...")
         
         # Make predictions
         y_pred = self.model.predict(X_test)
@@ -155,36 +157,68 @@ class NBACareerPredictor:
         # Calculate ROC curve and AUC
         fpr, tpr, thresholds = roc_curve(y_test, y_prob)
         auc_score = auc(fpr, tpr)
-        # add auc_score to metrics
-        metrics['auprc'] = auc_score
+        metrics['auc'] = auc_score
         
         # Calculate Youden Index
-        youden_index, optimal_threshold, optimal_fpr, optimal_tpr = self.calculate_youden_index(fpr, tpr, thresholds)
+        youden_index, optimal_threshold, optimal_fpr, optimal_tpr = self.calculate_youden_index(
+            fpr, tpr, thresholds
+        )
         
         logging.info(f"Model performance metrics (AUC={auc_score:.3f}):")
         for metric, value in metrics.items():
             logging.info(f"{metric}: {value:.3f}")
-        # logging.info(f"Youden Index: {youden_index:.3f} at threshold {optimal_threshold:.3f}")
-
-        final_score = metrics[GOAL_METRIC]
         
-        return metrics, final_score, fpr, tpr, thresholds, youden_index, optimal_threshold, optimal_fpr, optimal_tpr
+        return metrics, fpr, tpr, thresholds, youden_index, optimal_threshold, optimal_fpr, optimal_tpr
+    
+    def calculate_youden_index(self, fpr, tpr, thresholds):
+        """Calculate Youden Index and find optimal threshold"""
+        youden_index = tpr - fpr
+        max_index = np.argmax(youden_index)
+        return youden_index[max_index], thresholds[max_index], fpr[max_index], tpr[max_index]
     
     def explain_predictions(self, X):
         """Generate SHAP values for model interpretation"""
         logging.info("Generating SHAP values...")
-        # if the model type is not SVM, we can use the TreeExplainer
-        # TODO: solve issue when Logistic regression or Random Forest
-        from sklearn.svm import SVC
-        if not isinstance(self.model, SVC):
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+        import xgboost as xgb
+        
+        # Check if model is tree-based
+        tree_models = (RandomForestClassifier, GradientBoostingClassifier, xgb.XGBClassifier)
+        
+        if isinstance(self.model, tree_models):
+            logging.info("Using TreeExplainer for tree-based model")
             explainer = shap.TreeExplainer(self.model)
             shap_values = explainer.shap_values(X)
+        elif isinstance(self.model, LogisticRegression):
+            logging.info("Using LinearExplainer for logistic regression")
+            explainer = shap.LinearExplainer(self.model, X)
+            shap_values = explainer.shap_values(X)
         else:
-            # if the model type is SVM, we need to use the KernelExplainer
-            explainer = shap.KernelExplainer(self.model.predict, X)
+            logging.info("Using TreeExplainer as default")
+            explainer = shap.TreeExplainer(self.model)
             shap_values = explainer.shap_values(X)
         
         return shap_values
+    
+    def predict_proba(self, X):
+        """Predict probability for multiple samples"""
+        if not isinstance(X, pd.DataFrame):
+            raise ValueError("Input must be a pandas DataFrame")
+            
+        # Ensure all required features are present
+        missing_features = set(self.features_list) - set(X.columns)
+        if missing_features:
+            raise ValueError(f"Missing features: {missing_features}")
+        
+        # Select and order features
+        X = X[self.features_list]
+        
+        # Scale features using the fitted scaler
+        X_scaled = self.scaler.transform(X)
+        
+        # Make prediction
+        return self.model.predict_proba(X_scaled)[:, 1]
     
     def save_model(self, filepath):
         """Save the trained model and associated data"""
