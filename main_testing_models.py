@@ -100,12 +100,12 @@ def main():
         predictor.save_model(os.path.join(model_dir, 'model.joblib'))
         # Save model metadata
         metadata = {
-            'model_type': args.model_type,
-            'features': predictor.features_list,
+            'model_type': predictor.model_type,
+            'features': base_predictor.features_list,
             'hyperparameters': predictor.hyperparameters,
             'metrics': metrics,
             'training_date': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'number_of_features': len(predictor.features_list),
+            'number_of_features': len(base_predictor.features_list),
             'training_samples': len(X),
             'positive_class_ratio': float(y.mean()),
             'random_seed': args.seed

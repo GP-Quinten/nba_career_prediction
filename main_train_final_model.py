@@ -9,6 +9,7 @@ import os
 from nba_career_predictor import NBACareerPredictor
 import config
 import shap
+import matplotlib.pyplot as plt
 
 def main():
     # Parse arguments
@@ -37,7 +38,7 @@ def main():
     logging.info(f"Loaded {len(df)} players data")
     
     # Initialize predictor
-    predictor = NBACareerPredictor(model_type=args.model_type, seed=args.seed)
+    predictor = NBACareerPredictor(model_type=model_type, seed=args.seed)
     
     # Add features
     logging.info("Engineering features...")
@@ -65,7 +66,7 @@ def main():
     X_scaled = predictor.scaler.fit_transform(X)
     
     # Train final model
-    logging.info(f"Training final {args.model_type} model...")
+    logging.info(f"Training final {model_type} model...")
     metrics, final_score = predictor.train_model(X_scaled, y)
     
     # Log training results
@@ -76,7 +77,6 @@ def main():
     # Generate feature importance plot if applicable
     if hasattr(predictor.model, 'feature_importances_'):
         logging.info("Generating feature importance plot...")
-        import matplotlib.pyplot as plt
         
         # Get feature importances
         importances = predictor.model.feature_importances_
@@ -123,7 +123,7 @@ def main():
     
     # Save model metadata
     metadata = {
-        'model_type': args.model_type,
+        'model_type': model_type,
         'features': predictor.features_list,
         'hyperparameters': predictor.hyperparameters,
         'metrics': metrics,

@@ -20,6 +20,7 @@ RANDOM_SEED = 10
 GOAL_METRIC = 'recall'  # alternatively 'recall'
 N_SPLITS = 10
 XAI = False  # Whether to compute SHAP values
+PREDICT_THRESHOLD = 1/3 # Threshold for predicting positive class
 
 # Model parameter grids
 PARAM_GRIDS = {

@@ -9,4 +9,6 @@ shap
 joblib
 flask
 xgboost
+kaleido
+json
 

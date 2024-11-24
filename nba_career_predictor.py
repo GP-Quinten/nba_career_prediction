@@ -7,7 +7,7 @@ import shap
 import joblib
 import logging
 import os
-from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS, OUTCOME, GOAL_METRIC, RANDOM_SEED, N_SPLITS
+from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS, OUTCOME, GOAL_METRIC, RANDOM_SEED, N_SPLITS, PREDICT_THRESHOLD
 
 class NBACareerPredictor:
     def __init__(self, model_type="Random Forest", seed=42):
@@ -17,7 +17,7 @@ class NBACareerPredictor:
         self.scaler = MinMaxScaler()
         self.hyperparameters = {}
         self.feature_names = None
-        self.threshold = 0.5
+        self.threshold = PREDICT_THRESHOLD
         self.seed = seed
         
     def add_features(self, df):
@@ -115,6 +115,8 @@ class NBACareerPredictor:
     def train_model(self, X_train, y_train):
         """Train the model"""
         logging.info("Training model...")
+        # # Store feature names
+        # self.features_list = [col for col in X_train.columns if col not in ['Name', OUTCOME]]
         
         # Get tuned model
         self.model = self.hyperparameter_tuning_model(X_train, y_train)
@@ -229,6 +231,7 @@ class NBACareerPredictor:
             'hyperparameters': self.hyperparameters,
             'threshold': self.threshold
         }
+        print(f"Model data threshold: {round(model_data['threshold'],2)}")
         joblib.dump(model_data, filepath)
         logging.info(f"Model saved to {filepath}")
     
