@@ -71,6 +71,9 @@ MODELS_COLORS = {
     "XGBoost": "purple"
 }
 
+# API Link
+API = "external" # internal or external
+
 # parameters for app SHAP local explanation HTML template
 HTML_SHAP_LOCAL_EXPL_TEMPLATE = """
 <!DOCTYPE html>

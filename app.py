@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template_string
 import pandas as pd
+import numpy as np
 import os
 import logging
 from nba_career_predictor import NBACareerPredictor
@@ -47,42 +48,71 @@ def read_excel_input(file):
         raise
 
 def get_shap_explanation(model, enhanced_df_scaled, feature_names):
-    """Generate SHAP local explanation plot and return as base64 string"""
-    plt.clf()  # Clear current figure
-    
-    # Get SHAP values
-    from sklearn.linear_model import LogisticRegression
-    if isinstance(model, LogisticRegression):
-        explainer = shap.LinearExplainer(model, enhanced_df_scaled)
-    else:
-        explainer = shap.TreeExplainer(model)
-    
-    shap_values = explainer.shap_values(enhanced_df_scaled)
-    
-    # For binary classification, we might need to select the positive class
-    if isinstance(shap_values, list):
-        shap_values = shap_values[1]
-    
-    # Create force plot
-    plt.figure(figsize=(15, 5))
-    shap.force_plot(
-        explainer.expected_value if isinstance(explainer, shap.TreeExplainer) 
-        else explainer.expected_value[0],
-        shap_values[0],
-        enhanced_df_scaled.iloc[0],
-        feature_names=feature_names,
-        matplotlib=True,
-        show=False
-    )
-    plt.tight_layout()
-    
-    # Convert plot to base64 string
-    buf = BytesIO()
-    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
-    plt.close()
-    buf.seek(0)
-    plot_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-    return plot_base64
+    """Generate SHAP summary plot"""
+    try:
+        logger.info("Starting SHAP explanation generation...")
+        plt.clf()
+        
+        from sklearn.linear_model import LogisticRegression
+        if isinstance(model, LogisticRegression):
+            logger.info("Using direct coefficient interpretation for Logistic Regression")
+            
+            # Get coefficients and feature values
+            coef = model.coef_[0]  # Coefficients for binary classification
+            feature_values = enhanced_df_scaled.values[0]
+            
+            # Calculate feature contributions
+            contributions = coef * feature_values
+            
+            logger.info(f"Coefficients shape: {coef.shape}")
+            logger.info(f"Feature values shape: {feature_values.shape}")
+            logger.info(f"Contributions shape: {contributions.shape}")
+            logger.info(f"Sample contributions: {contributions[:5]}")
+            
+            # Get top 10 most important features
+            importance = np.abs(contributions)
+            top_indices = np.argsort(importance)[-10:]
+            
+            # Create plot
+            plt.figure(figsize=(12, 6))
+            
+            # Plot horizontal bar chart
+            y_pos = np.arange(len(top_indices))
+            values_to_plot = contributions[top_indices]
+            feature_names_to_plot = np.array(feature_names)[top_indices]
+            
+            bars = plt.barh(y_pos, values_to_plot)
+            
+            # Color bars based on contribution direction
+            for i, bar in enumerate(bars):
+                bar.set_color('red' if values_to_plot[i] > 0 else 'blue')
+            
+            # Add feature names and values
+            plt.yticks(y_pos, feature_names_to_plot)
+            for i, v in enumerate(values_to_plot):
+                plt.text(v, i, f'{v:.3f}', va='center')
+            
+            plt.xlabel('Feature Contribution (coefficient × value)')
+            plt.title('Top 10 Feature Contributions to Prediction')
+            
+            plt.tight_layout()
+            
+        # Convert plot to base64
+        buf = BytesIO()
+        plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+        plt.close()
+        buf.seek(0)
+        plot_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+        
+        logger.info("Feature importance visualization generated successfully")
+        return plot_base64
+        
+    except Exception as e:
+        logger.error(f"Error in get_shap_explanation: {str(e)}")
+        logger.error(f"Error type: {type(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -136,12 +166,18 @@ def predict():
             'shap_plot': shap_plot
         }
         
-        response = {
-            'prediction': prediction,
-            'probabilite': round(float(probability),2),
-            'message': 'View explanation at http://127.0.0.1:5000/explain'
-        }
-        
+        if config.API == 'internal':
+            response = {
+                'prediction': prediction,
+                'probabilite': round(float(probability),2),
+                'message': 'View explanation at http://127.0.0.1:5000/explain'
+            }
+        else:
+            response = {
+                'prediction': prediction,
+                'probabilite': round(float(probability),2),
+                'message': f'View explanation at {request.headers.get("X-Forwarded-Proto", "http")}://{request.headers.get("Host")}/explain'
+            }
         return jsonify(response)
     
     except Exception as e:
@@ -156,7 +192,7 @@ def explain():
             return "No prediction available to explain", 404
             
         return render_template_string(
-            config.HTML_TEMPLATE,
+            config.HTML_SHAP_LOCAL_EXPL_TEMPLATE,
             prediction=app.shap_results['prediction'],
             probability=app.shap_results['probability'],
             shap_plot=app.shap_results['shap_plot']
@@ -166,4 +202,7 @@ def explain():
         return str(e), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    if config.API == 'external':
+        app.run(debug=True, port=5000, host='0.0.0.0')
+    else:
+        app.run(debug=True, port=5000, host='127.0.0.1')
