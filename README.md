@@ -22,6 +22,7 @@ A false positive rate of 80% is acceptable (1 out of 5 predictions should be a k
   - Prediction (career > 5 years: yes/no)
   - Probability score
   - Link to visualize feature importance analysis
+you will find more details on the decisions I made in the excel file `decision_log.xslx`.
 
 ## Structure and Usage
 
