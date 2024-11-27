@@ -13,7 +13,6 @@ python main_testing_models.py \
     --experiment-name "model_comparison" \
     --seed 42 \
     --log-level INFO \
-    --add-random-variable False
 ```
 You will find some info on the experiment in the `results/model_comparison`. Namely check the plot of the ROC curves of all models.
 
