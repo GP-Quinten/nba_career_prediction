@@ -42,5 +42,3 @@ MIN_CAT_MIN>30,bool,False,2
 GP_CAT_GP<28,bool,False,2
 GP_CAT_GP<56,bool,False,2
 GP_CAT_GP≥56,bool,False,2
-RANDOM_BINARY,int64,False,2
-RANDOM_NUMERICAL,int64,False,726

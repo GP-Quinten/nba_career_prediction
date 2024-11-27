@@ -8,7 +8,6 @@ import joblib
 import logging
 import os
 import config
-# from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS, OUTCOME, GOAL_METRIC, RANDOM_SEED, N_SPLITS, PREDICT_THRESHOLD, ADD_RANDOM_VARIABLES
 
 class NBACareerPredictor:
     def __init__(self, model_type="Random Forest", seed=42):

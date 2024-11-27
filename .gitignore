@@ -1,7 +1,6 @@
 ##########################
-# Hide results
-results/**
-# KEDRO PROJECT
+# Hide old results
+results/old/**
 
 # ignore all local configuration
 # conf/local/**

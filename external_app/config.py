@@ -77,7 +77,7 @@ MODELS_COLORS = {
 API = "external" # internal or external
 
 # parameters for app SHAP local explanation HTML template
-HTML_SHAP_LOCAL_EXPL_TEMPLATE = """
+HTML_FEATURE_IMPORTANCE_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
