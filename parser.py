@@ -28,14 +28,6 @@ def setup_parser():
     )
 
     parser.add_argument(
-        '--add-random-variable',
-        choices=[True, False],
-        type=bool,
-        default=False,
-        help='You can add a random variable to the dataset to test the coherence of the model'
-    )
-
-    parser.add_argument(
         '--seed',
         type=int,
         default=42,

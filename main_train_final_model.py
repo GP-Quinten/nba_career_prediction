@@ -64,6 +64,22 @@ def main():
     # Scale all data
     logging.info("Scaling features...")
     X_scaled = predictor.scaler.fit_transform(X)
+
+    # concatenate X_scaled and y and save to csv
+    X_scaled_df = pd.DataFrame(X_scaled, columns=predictor.features_list)
+    X_scaled_df[config.OUTCOME] = y
+    X_scaled_df.to_csv(os.path.join(output_dir, 'scaled_data.csv'), index=False)
+    # compute and save correlation matrix plot as png
+    corr_matrix = X_scaled_df.corr()
+    plt.figure(figsize=(12, 8))
+    plt.matshow(corr_matrix, fignum=1, cmap='coolwarm')
+    plt.colorbar()
+    plt.xticks(range(len(corr_matrix.columns)), corr_matrix.columns, rotation=45, ha='left', fontsize=8)
+    plt.yticks(range(len(corr_matrix.columns)), corr_matrix.columns, fontsize=8)
+    plt.title('Correlation Matrix')
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'correlation_matrix.png'))
+
     
     # Train final model
     logging.info(f"Training final {model_type} model...")

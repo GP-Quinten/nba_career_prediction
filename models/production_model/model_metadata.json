@@ -46,18 +46,18 @@
         "RANDOM_NUMERICAL"
     ],
     "hyperparameters": {
-        "C": 1,
+        "C": 0.1,
         "class_weight": "balanced",
         "max_iter": 10000,
-        "solver": "lbfgs"
+        "solver": "liblinear"
     },
     "metrics": {
-        "accuracy": 0.7044776119402985,
-        "precision": 0.8025034770514604,
-        "recall": 0.694344163658243,
-        "f1": 0.7445161290322581
+        "accuracy": 0.7089552238805971,
+        "precision": 0.8066759388038943,
+        "recall": 0.6979542719614922,
+        "f1": 0.7483870967741936
     },
-    "training_date": "2024-11-24 21:17:17",
+    "training_date": "2024-11-27 11:10:10",
     "number_of_features": 43,
     "training_samples": 1340,
     "positive_class_ratio": 0.6201492537313433,

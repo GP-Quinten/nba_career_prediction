@@ -22,6 +22,7 @@ GOAL_METRIC = 'recall'  # alternatively 'recall'
 N_SPLITS = 10
 XAI = False  # Whether to compute SHAP values
 PREDICT_THRESHOLD = 1/3 # Threshold for predicting positive class
+RANDOM_VARIABLE = False
 
 # Model parameter grids
 PARAM_GRIDS = {
