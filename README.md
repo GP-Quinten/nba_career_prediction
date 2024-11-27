@@ -2,7 +2,7 @@
 
 # Usage for external user
 
-### Web Deployment
+### Web Deployment on Free PythonAnyWhere
 The application is also deployed on PythonAnywhere. To use it:
 
 1. Download the template `input.xlsx` and fill the stats of your player accordingly
