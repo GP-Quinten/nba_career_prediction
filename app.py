@@ -13,23 +13,25 @@ from io import BytesIO
 import matplotlib
 matplotlib.use('Agg')  # Set this BEFORE importing pyplot
 import matplotlib.pyplot as plt
+import logging
+from logger import init_logger
+from pathlib import Path
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('api.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Modify your path configurations to be PythonAnywhere-compatible
+BASE_DIR = Path(__file__).resolve().parent
+UPLOAD_FOLDER = BASE_DIR / 'temp_uploads'
+LOG_FILE = BASE_DIR / 'api.log'
 
+# Initiate logger
+init_logger(level="INFO", file=True, file_path="api.log", stream=True)
+
+# Update your Flask configuration
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-app.config['UPLOAD_FOLDER'] = 'temp_uploads'
+app.config['UPLOAD_FOLDER'] = str(UPLOAD_FOLDER)
 
-# Create upload folder if it doesn't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Ensure upload folder exists
+UPLOAD_FOLDER.mkdir(exist_ok=True)
 
 MODEL_PATH = os.path.join(config.MODELS_DIR, 'production_model', 'final_model.joblib')
 predictor = NBACareerPredictor.load_model(MODEL_PATH)
@@ -44,18 +46,18 @@ def read_excel_input(file):
         os.remove(filepath)  # Clean up
         return df.iloc[0].to_dict()
     except Exception as e:
-        logger.error(f"Error reading Excel file: {str(e)}")
+        logging.error(f"Error reading Excel file: {str(e)}")
         raise
 
 def get_shap_explanation(model, enhanced_df_scaled, feature_names):
     """Generate SHAP summary plot"""
     try:
-        logger.info("Starting SHAP explanation generation...")
+        logging.info("Starting SHAP explanation generation...")
         plt.clf()
         
         from sklearn.linear_model import LogisticRegression
         if isinstance(model, LogisticRegression):
-            logger.info("Using direct coefficient interpretation for Logistic Regression")
+            logging.info("Using direct coefficient interpretation for Logistic Regression")
             
             # Get coefficients and feature values
             coef = model.coef_[0]  # Coefficients for binary classification
@@ -64,10 +66,10 @@ def get_shap_explanation(model, enhanced_df_scaled, feature_names):
             # Calculate feature contributions
             contributions = coef * feature_values
             
-            logger.info(f"Coefficients shape: {coef.shape}")
-            logger.info(f"Feature values shape: {feature_values.shape}")
-            logger.info(f"Contributions shape: {contributions.shape}")
-            logger.info(f"Sample contributions: {contributions[:5]}")
+            logging.info(f"Coefficients shape: {coef.shape}")
+            logging.info(f"Feature values shape: {feature_values.shape}")
+            logging.info(f"Contributions shape: {contributions.shape}")
+            logging.info(f"Sample contributions: {contributions[:5]}")
             
             # Get top 10 most important features
             importance = np.abs(contributions)
@@ -104,30 +106,30 @@ def get_shap_explanation(model, enhanced_df_scaled, feature_names):
         buf.seek(0)
         plot_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
         
-        logger.info("Feature importance visualization generated successfully")
+        logging.info("Feature importance visualization generated successfully")
         return plot_base64
         
     except Exception as e:
-        logger.error(f"Error in get_shap_explanation: {str(e)}")
-        logger.error(f"Error type: {type(e)}")
+        logging.error(f"Error in get_shap_explanation: {str(e)}")
+        logging.error(f"Error type: {type(e)}")
         import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         raise
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        logger.info("Received prediction request")
+        logging.info("Received prediction request")
         if 'file' in request.files:
             file = request.files['file']
-            logger.info(f"Processing file: {file.filename}")
+            logging.info(f"Processing file: {file.filename}")
             if file and file.filename.endswith('.xlsx'):
                 player_stats = read_excel_input(file)
             else:
                 return jsonify({'error': 'Invalid file format. Please upload .xlsx file'}), 400
         else:
             player_stats = request.get_json()
-            logger.info("Processing JSON input")
+            logging.info("Processing JSON input")
 
         if not player_stats:
             return jsonify({'error': 'Aucune donnée fournie'}), 400
@@ -181,7 +183,7 @@ def predict():
         return jsonify(response)
     
     except Exception as e:
-        logger.error(f"Erreur lors de la prédiction: {str(e)}")
+        logging.error(f"Erreur lors de la prédiction: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/explain', methods=['GET'])
@@ -198,11 +200,11 @@ def explain():
             shap_plot=app.shap_results['shap_plot']
         )
     except Exception as e:
-        logger.error(f"Error generating explanation: {str(e)}")
+        logging.error(f"Error generating explanation: {str(e)}")
         return str(e), 500
 
-if __name__ == '__main__':
-    if config.API == 'external':
-        app.run(debug=True, port=5000, host='0.0.0.0')
-    else:
-        app.run(debug=True, port=5000, host='127.0.0.1')
+# if __name__ == '__main__':
+#     if config.API == 'external':
+#         app.run(debug=True, port=5000, host='0.0.0.0')
+#     else:
+#         app.run(debug=True, port=5000, host='127.0.0.1')
