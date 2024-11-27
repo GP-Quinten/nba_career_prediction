@@ -11,6 +11,8 @@ The application is also deployed on PythonAnywhere. To use it:
 curl -X POST -F "file=@/path/to/your/input.xlsx" https://Gagatiu.pythonanywhere.com/predict
 ```
 3. Open the link of explanation to understand how the different features influenced the prediction.
+If you don't change the value in the `input.xlsx` you should get a prediction of 0 and a probaility of 0.14, and observe the following features importance graph.
+<img width="1361" alt="image" src="https://github.com/user-attachments/assets/c834017b-cc36-4462-8232-a8b7d0d05239">
 
 ### Model Details
 - Threshold set to 1/3 to achieve recall > 80%. Recall is prioritized to avoid missing potential key players (like the next Stephen Curry).
