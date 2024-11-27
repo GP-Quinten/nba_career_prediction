@@ -23,6 +23,13 @@ A false positive rate of 80% is acceptable (1 out of 5 predictions should be a k
   - Probability score
   - Link to visualize feature importance analysis
 
+You will find more details on the decisions I made in the excel file `decision_log.xslx`. Especially why we used logistic regression:
+- not missing values
+- clean data without many outliers
+- Gaussian distributions
+- not too many variables
+- easier to interpret
+
 ## Structure and Usage
 
 ### Exploratory Analysis
