@@ -1,6 +1,6 @@
 # NBA Career Predictor
 
-# Usage for external user
+## Usage for external user
 
 ### Web Deployment on Free PythonAnyWhere
 The application is also deployed on PythonAnywhere. To use it:
