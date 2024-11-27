@@ -41,26 +41,24 @@
         "MIN_CAT_MIN>30",
         "GP_CAT_GP<28",
         "GP_CAT_GP<56",
-        "GP_CAT_GP\u226556",
-        "RANDOM_BINARY",
-        "RANDOM_NUMERICAL"
+        "GP_CAT_GP\u226556"
     ],
     "hyperparameters": {
         "colsample_bytree": 0.8,
         "learning_rate": 0.01,
         "max_depth": 3,
         "n_estimators": 200,
-        "subsample": 0.8
+        "subsample": 1.0
     },
     "metrics": {
-        "accuracy": 0.7667910447761194,
-        "precision": 0.7815468113975577,
-        "recall": 0.8661654135338346,
-        "f1": 0.8216833095577746
+        "accuracy": 0.7753346080305927,
+        "precision": 0.7888283378746594,
+        "recall": 0.8786039453717754,
+        "f1": 0.8312993539124193
     },
-    "training_date": "2024-11-27 10:32:46",
-    "number_of_features": 43,
-    "training_samples": 1340,
-    "positive_class_ratio": 0.6201492537313433,
+    "training_date": "2024-11-27 13:34:02",
+    "number_of_features": 41,
+    "training_samples": 1308,
+    "positive_class_ratio": 0.6299694189602446,
     "random_seed": 42
 }

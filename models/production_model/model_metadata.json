@@ -44,18 +44,18 @@
         "GP_CAT_GP\u226556"
     ],
     "hyperparameters": {
-        "C": 0.1,
-        "class_weight": null,
+        "C": 1,
+        "class_weight": "balanced",
         "max_iter": 10000,
-        "solver": "liblinear"
+        "solver": "lbfgs"
     },
     "metrics": {
-        "accuracy": 0.735474006116208,
-        "precision": 0.7691441441441441,
-        "recall": 0.8288834951456311,
-        "f1": 0.7978971962616822
+        "accuracy": 0.7140672782874617,
+        "precision": 0.8242074927953891,
+        "recall": 0.6941747572815534,
+        "f1": 0.7536231884057971
     },
-    "training_date": "2024-11-27 11:25:28",
+    "training_date": "2024-11-27 13:55:42",
     "number_of_features": 41,
     "training_samples": 1308,
     "positive_class_ratio": 0.6299694189602446,

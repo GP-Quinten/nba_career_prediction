@@ -203,8 +203,8 @@ def explain():
         logging.error(f"Error generating explanation: {str(e)}")
         return str(e), 500
 
-# if __name__ == '__main__':
-#     if config.API == 'external':
-#         app.run(debug=True, port=5000, host='0.0.0.0')
-#     else:
-#         app.run(debug=True, port=5000, host='127.0.0.1')
+if __name__ == '__main__':
+    if config.API == 'external':
+        app.run(debug=True, port=5000, host='0.0.0.0')
+    else:
+        app.run(debug=True, port=5000, host='127.0.0.1')

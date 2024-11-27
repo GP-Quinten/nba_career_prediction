@@ -41,9 +41,7 @@
         "MIN_CAT_MIN>30",
         "GP_CAT_GP<28",
         "GP_CAT_GP<56",
-        "GP_CAT_GP\u226556",
-        "RANDOM_BINARY",
-        "RANDOM_NUMERICAL"
+        "GP_CAT_GP\u226556"
     ],
     "hyperparameters": {
         "C": 1,
@@ -52,14 +50,14 @@
         "solver": "lbfgs"
     },
     "metrics": {
-        "accuracy": 0.7044776119402985,
-        "precision": 0.8025034770514604,
-        "recall": 0.694344163658243,
-        "f1": 0.7445161290322581
+        "accuracy": 0.7140672782874617,
+        "precision": 0.8242074927953891,
+        "recall": 0.6941747572815534,
+        "f1": 0.7536231884057971
     },
-    "training_date": "2024-11-24 21:17:17",
-    "number_of_features": 43,
-    "training_samples": 1340,
-    "positive_class_ratio": 0.6201492537313433,
+    "training_date": "2024-11-27 13:55:42",
+    "number_of_features": 41,
+    "training_samples": 1308,
+    "positive_class_ratio": 0.6299694189602446,
     "random_seed": 42
 }

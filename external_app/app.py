@@ -194,7 +194,7 @@ def explain():
             return "No prediction available to explain", 404
 
         return render_template_string(
-            config.HTML_SHAP_LOCAL_EXPL_TEMPLATE,
+            config.HTML_FEATURE_IMPORTANCE_TEMPLATE,
             prediction=app.visualization_results["prediction"],
             probability=app.visualization_results["probability"],
             shap_plot=app.visualization_results["importance_plot"]
