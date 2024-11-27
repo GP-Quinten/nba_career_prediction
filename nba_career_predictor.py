@@ -7,7 +7,8 @@ import shap
 import joblib
 import logging
 import os
-from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS, OUTCOME, GOAL_METRIC, RANDOM_SEED, N_SPLITS, PREDICT_THRESHOLD, RANDOM_VARIABLE
+import config
+# from config import PARAM_GRIDS, MINUTES_BINS, GAMES_BINS, OUTCOME, GOAL_METRIC, RANDOM_SEED, N_SPLITS, PREDICT_THRESHOLD, ADD_RANDOM_VARIABLES
 
 class NBACareerPredictor:
     def __init__(self, model_type="Random Forest", seed=42):
@@ -17,7 +18,7 @@ class NBACareerPredictor:
         self.scaler = StandardScaler()
         self.hyperparameters = {}
         self.feature_names = None
-        self.threshold = PREDICT_THRESHOLD
+        self.threshold = config.PREDICT_THRESHOLD
         self.seed = seed
         
     def add_features(self, df):
@@ -29,7 +30,7 @@ class NBACareerPredictor:
         
         # Total features
         for col in df.columns:
-            if col not in ['Name', OUTCOME, 'FG%', '3P%', 'FT%', 'GP']:
+            if col not in ['Name', config.OUTCOME, 'FG%', '3P%', 'FT%', 'GP']:
                 enhanced_df[f'{col}_TOT'] = df['GP'] * df[col]
         
         # Efficiency rates
@@ -43,12 +44,12 @@ class NBACareerPredictor:
         # Categorical features for minutes and games
         enhanced_df['MIN_CAT'] = pd.cut(
             enhanced_df['MIN'],
-            bins=MINUTES_BINS,
+            bins=config.MINUTES_BINS,
             labels=['MIN<10', 'MIN<20', 'MIN<30', 'MIN>30']
         )
         enhanced_df['GP_CAT'] = pd.cut(
             enhanced_df['GP'],
-            bins=GAMES_BINS,
+            bins=config.GAMES_BINS,
             labels=['GP<28', 'GP<56', 'GP≥56']
         )
         
@@ -56,7 +57,7 @@ class NBACareerPredictor:
         enhanced_df = pd.get_dummies(enhanced_df, columns=['MIN_CAT', 'GP_CAT'])
         
         # add Two random variables: RANDOM_BINARY and RANDOM_NUMERICAL
-        if RANDOM_VARIABLE:
+        if config.ADD_RANDOM_VARIABLES:
             np.random.seed(42)
             enhanced_df['RANDOM_BINARY'] = np.random.randint(0, 2, size=len(enhanced_df))
             enhanced_df['RANDOM_NUMERICAL'] = np.random.randint(0, 1000, size=len(enhanced_df))
@@ -72,14 +73,14 @@ class NBACareerPredictor:
         df = df.fillna(0)
         
         # Drop duplicates
-        df = df.groupby([col for col in df.columns if col != OUTCOME])\
-               .agg({OUTCOME: 'max'})\
+        df = df.groupby([col for col in df.columns if col != config.OUTCOME])\
+               .agg({config.OUTCOME: 'max'})\
                .reset_index()
         
         logging.info(f"Dataset contains {df['Name'].nunique()} unique players")
         
         # Store feature names
-        self.features_list = [col for col in df.columns if col not in ['Name', OUTCOME]]
+        self.features_list = [col for col in df.columns if col not in ['Name', config.OUTCOME]]
         
         return df
     
@@ -90,10 +91,10 @@ class NBACareerPredictor:
         
         # Get base model and parameter grid
         base_model = self._get_model_instance()
-        param_grid = PARAM_GRIDS[model_type]
+        param_grid = config.PARAM_GRIDS[model_type]
         
         # Setup cross-validation
-        cv = StratifiedKFold(n_splits=N_SPLITS, shuffle=True, random_state=self.seed)
+        cv = StratifiedKFold(n_splits=config.N_SPLITS, shuffle=True, random_state=self.seed)
         
         # Perform grid search
         grid_search = GridSearchCV(
@@ -137,7 +138,7 @@ class NBACareerPredictor:
             'f1': f1_score(y_train, y_pred)
         }
         
-        final_score = metrics[GOAL_METRIC]
+        final_score = metrics[config.GOAL_METRIC]
         
         return metrics, final_score
     
