@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_curve, auc
 # import shap
@@ -13,7 +13,7 @@ class NBACareerPredictor:
         self.model = None
         self.model_type = model_type
         self.features_list = None
-        self.scaler = MinMaxScaler()
+        self.scaler = StandardScaler()
         self.hyperparameters = {}
         self.feature_names = None
         self.threshold = PREDICT_THRESHOLD
